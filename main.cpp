@@ -2,8 +2,8 @@
 #include <vector>
 #include <algorithm>
 #include <cstdio>
+#include <string>
 #include <random>
-
 
 #define DECKSIZE 52
 
@@ -16,8 +16,55 @@ private:
 public:
     Deck(){
         add_deck();
+        print_deck();
     }
 
+    static std::string eval_card(int card_val){
+        int d = (int) card_val%13;
+        int r = (int) card_val/13;
+        char color;
+        std::string value;
+
+        switch (r) {
+        case 0:
+            color = 'c';
+            break;
+
+        case 1:
+            color = 'd';
+            break;
+
+        case 2:
+            color = 's';
+            break;
+
+        case 3:
+            color = 'h';
+            break;
+        default:
+            color=' ';
+            break;
+        }
+
+        switch (d) {
+        case 0:
+            value="Ace ";
+            break;
+        case 12:
+            value="King ";
+            break;
+        case 11:
+            value="Queen ";
+            break;
+        case 10:
+            value="Jack ";
+            break;
+        default:
+            value=std::to_string(d+1)+" ";
+            break;
+        }
+        return value+color;
+    }
     void add_deck(){
         deck_.reserve(deck_.size()+DECKSIZE);
 
@@ -34,15 +81,16 @@ public:
 
         int tmp = deck_.back();
         deck_.pop_back();
+        //print_deck();
         return tmp;
     }
 
-    /*    void print_deck(){
+        void print_deck(){
         for(int i : deck_){
             std::cout<<i<<" ";
         }
         std::cout << '\n';
-    }*/
+    }
 };
 
 
@@ -50,7 +98,7 @@ class Blackjack{
     Deck deck = Deck();
     int player_count;
     int* bank;
-    std::vector<std::vector<int>*> hands;
+    std::vector<std::vector<int>> hands;
 
 public:
 
@@ -58,6 +106,7 @@ public:
         player_count = pCount;
         bank = (int*) malloc(player_count*2*sizeof(int));
         hands.reserve(player_count+1);// +Dealer
+        std::cout<<hands.size();
 
         set_balance(money);
         game_loop();
@@ -69,7 +118,7 @@ public:
         }
     }
 
-    void get_bets(){
+    void set_bets(){
         for (int i = 0; i<player_count; i++) {
             printf("Player %d place your bet:\n", i);
             std::cin>>bank[2*i+1];
@@ -77,19 +126,40 @@ public:
     }
 
     void deal_cards(){ // init hands
+
         for(int i = 0; i<player_count+1; i++){
-            hands.push_back(new std::vector<int>(10));
+            hands.emplace_back(std::vector<int>());
+            hands[i].reserve(10);
         }
-        for(int i=0;i<player_count+1;i++){
-            hands[i]->push_back(deck.get_card());
-            hands[i]->push_back(deck.get_card());
+        for(int i=0; i<hands.size();i++){
+            hands[i].push_back(0); //sum as first elem
+        }
+        for(int i=0;i<hands.size();i++){
+            for(int a=0; a<2; a++){
+                int tmp=deck.get_card();
+                hands[i][0] += tmp;
+                hands[i].push_back(tmp);
+            }
+
+        }
+    }
+
+    void print_hands(){
+        std::cout<<"---Hands---\n";
+        for(int i = 0; i<hands.size(); i++){
+            printf("Player %d' Hand is: \n",i);
+            for(int a = 1; a < hands[i].size(); a++){
+                std::cout<<Deck::eval_card(hands[i][a])<<std::endl;
+            }
         }
     }
 
     void game_loop(){
         std::cout<<"--Bet Phase--\n\n";
-        get_bets();
+        set_bets();
         deal_cards();
+        print_hands();
+
     }
 
 };
@@ -100,13 +170,14 @@ int main()
 {
     char new_game;
     int player;
-    int startmoney;
+    int start_money;
     do {
+        std::cout<<12/13;
         std::cout<<"How many Player?\n";
         std::cin>>player;
         std::cout<<"How much Money?\n";
-        std::cin>>startmoney;
-        Blackjack blackjack(player,startmoney);
+        std::cin>>start_money;
+        Blackjack blackjack(player,start_money);
         std::cout<<"New Game?(y|n)\n";
         std::cin>>new_game;
     }while (new_game==121); //y
